@@ -27,11 +27,10 @@ class LsServer(SecureSocket):
             listener.bind(self.listenAddr)
             listener.listen(socket.SOMAXCONN)
 
-            logger.info('Listen to %s:%d' % self.listenAddr)
+            logger.info(f'正在监听: {self.listenAddr.ip}: {self.listenAddr.port}')
 
             while True:
                 connection, address = await self.loop.sock_accept(listener)
-                logger.info('Receive %s:%d', *address)
                 asyncio.ensure_future(self.handleConn(connection))
 
     # 解 SOCKS5 协议
@@ -119,10 +118,7 @@ class LsServer(SecureSocket):
             return
 
         dstIP = None
-
-        dstPort = buf[-2:]
-        dstPort = int(dstPort.hex(), 16)
-
+        dstPort = int(buf[-2:].hex(), 16)
         dstFamily = None
 
         # aType 代表请求的远程服务器地址类型，值长度 1 个字节，有三种类型
@@ -133,6 +129,7 @@ class LsServer(SecureSocket):
             dstFamily = socket.AF_INET
         elif buf[3] == 0x03:
             # domain: X'03'
+            # 发起查询域名
             dstIP = buf[5:-2].decode()
             dstAddress = net.Address(ip=dstIP, port=dstPort)
         elif buf[3] == 0x04:
@@ -144,8 +141,10 @@ class LsServer(SecureSocket):
             connection.close()
             return
 
-        dstServer = None
-        if dstFamily:
+        logger.debug(f'墙内主机请求访问{dstAddress}')
+
+        if dstFamily in [socket.AF_INET, socket.AF_INET6]:
+            # ipv4,ipv6
             try:
                 dstServer = socket.socket(family=dstFamily, type=socket.SOCK_STREAM)
                 dstServer.setblocking(False)
@@ -155,6 +154,7 @@ class LsServer(SecureSocket):
                     dstServer.close()
                     dstServer = None
         else:
+            # domainame
             host, port = dstAddress
             for res in await self.loop.getaddrinfo(host, port):
                 dstFamily, socktype, proto, _, dstAddress = res
@@ -168,8 +168,8 @@ class LsServer(SecureSocket):
                         dstServer.close()
                         dstServer = None
 
-        if dstFamily is None:
-            return
+        # if dstFamily is None:
+        #     return
         """
         The SOCKS request information is sent by the client as soon as it has
         established a connection to the SOCKS server, and completed the
@@ -211,8 +211,13 @@ class LsServer(SecureSocket):
             connection.close()
 
         # 从 localUser 读取数据发送到 dstServer
-        conn2dst = asyncio.ensure_future(self.decodeCopy(dstServer, connection))
-        # 从 dstServer 读取数据发送到 localUser，这里因为处在翻墙阶段出现网络错误的概率更大
-        dst2conn = asyncio.ensure_future(self.encodeCopy(connection, dstServer))
-        task = asyncio.ensure_future(asyncio.gather(conn2dst, dst2conn, loop=self.loop, return_exceptions=True))
+        logger.debug(f"1. 墙内数据解密: {connection.getpeername()} ==> {connection.getsockname()} ==> {dstServer.getsockname()}")
+        logger.debug(f"2. 连接google :   ==> {dstServer.getpeername()} ==> ")
+        logger.debug(f"3. 加密返回数据: {dstServer.getsockname()}  ==> {connection.getsockname()} ==> {connection.getpeername()}")
+
+        tasks = (
+            self.decodeCopy(dst=dstServer, src=connection),
+            self.encodeCopy(dst=connection, src=dstServer)
+        )
+        task = asyncio.gather(*tasks, loop=self.loop, return_exceptions=True)
         task.add_done_callback(cleanUp)

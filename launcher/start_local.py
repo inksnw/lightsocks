@@ -28,15 +28,8 @@ def run_server(config):
 def main():
 
     config = lsConfig.Config(None, None, None, None, None)
-    try:
-        with open('config_local.json', encoding='utf-8') as f:
-            file_config = lsConfig.load(f)
-    except lsConfig.InvalidFileError:
-        logger.debug(f'invalid config file')
-        sys.exit(1)
-    except FileNotFoundError:
-        logger.debug(f'config file not found')
-        sys.exit(1)
+    with open('config_local.json', encoding='utf-8') as f:
+        file_config = lsConfig.load(f)
     config = config._replace(**file_config._asdict())
 
     run_server(config)

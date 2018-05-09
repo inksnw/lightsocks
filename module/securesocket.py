@@ -27,41 +27,26 @@ class SecureSocket:
         self.loop = loop or asyncio.get_event_loop()
         self.cipher = cipher
 
-    # 从输入流里读取加密过的数据，解密后把原数据放到 bs 里
+    # 读取,解密
     async def decodeRead(self, conn: Connection):
         data = await self.loop.sock_recv(conn, 1024)
+        decode_data = self.cipher.decode(data)
+        return decode_data
 
-        # logger.debug('%s:%d decodeRead %r', *conn.getsockname(), data)
-
-        bs = bytearray(data)
-        # print('@@@', conn, len(data))
-        self.cipher.decode(bs)
-        return bs
-
-    # 把放在 bs 里的数据加密后立即全部写入输出流
+    # 加密,写入
     async def encodeWrite(self, conn: Connection, bs: bytearray):
-        # logger.debug('%s:%d encodeWrite %s', *conn.getsockname(), bytes(bs))
+        encode_bs = self.cipher.encode(bs)
+        await self.loop.sock_sendall(conn, encode_bs)
 
-        bs = bs.copy()
-
-        self.cipher.encode(bs)
-        await self.loop.sock_sendall(conn, bs)
-
-    # 从 src（source） 中源源不断的读取原数据，加密后写入到 dst（destination），直到 src 中没有数据可以再读取
     async def encodeCopy(self, dst: Connection, src: Connection):
         """
         It encodes the data flow from the src and sends to dst.
         """
-
-        # logger.debug('encodeCopy %s:%d => %s:%d', *src.getsockname(), *dst.getsockname())
-        # print('@@@', src)
-        # print('@@@', dst)
-
         while True:
             data = await self.loop.sock_recv(src, 1024)
             if not data:
                 break
-            await self.encodeWrite(dst, bytearray(data))
+            await self.encodeWrite(dst, data)
 
     # 从 src 中源源不断的读取加密后的数据，解密后写入到 dst，直到 src 中没有数据可以再读取
     async def decodeCopy(self, dst: Connection, src: Connection):
@@ -70,7 +55,6 @@ class SecureSocket:
         """
 
         # logger.debug(' %s:%d => %s:%d', *src.getsockname(), *dst.getsockname())
-        logger.debug('写入请求数据...')
 
         while True:
             bs = await self.decodeRead(src)
