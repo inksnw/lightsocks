@@ -3,12 +3,9 @@ import asyncio
 import sys
 
 sys.path.append("..")
-from module.password import InvalidPasswordError, dumpsPassword, loadsPassword, randomPassword
 from core.server import LsServer
 from utils import config as lsConfig
 from utils import net
-from utils.xlog import getLogger
-logger = getLogger('local')
 
 
 def run_server(config: lsConfig.Config):
@@ -23,20 +20,10 @@ def run_server(config: lsConfig.Config):
 
 def main():
 
-    config = lsConfig.Config(None, None, None, None, None)
+    with open('config_server.json', encoding='utf-8') as f:
+        file_config = lsConfig.loadjson(f)
 
-    try:
-        with open('config_server.json', encoding='utf-8') as f:
-            file_config = lsConfig.load(f)
-    except lsConfig.InvalidFileError:
-        logger.debug(f'invalid config file')
-        sys.exit(1)
-    except FileNotFoundError:
-        logger.debug(f'config file config.json not found')
-        sys.exit(1)
-    config = config._replace(**file_config._asdict())
-
-    run_server(config)
+    run_server(file_config)
 
 
 if __name__ == '__main__':

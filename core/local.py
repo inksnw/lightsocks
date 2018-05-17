@@ -12,6 +12,7 @@ logger = getLogger('local')
 
 class LsLocal(SecureSocket):
     # 新建一个本地端
+
     def __init__(self, loop, password, listenAddr, remoteAddr):
         super().__init__(loop=loop, cipher=Cipher.NewCipher(password))
         self.listenAddr = listenAddr
@@ -43,7 +44,9 @@ class LsLocal(SecureSocket):
             remote_sock.close()
             local_sock.close()
 
-        logger.debug(f"数据发送流程: {local_sock.getpeername()} ==> {local_sock.getsockname()} ==> {remote_sock.getsockname()} ==> {remote_sock.getpeername()}")
+        # logger.debug(f"数据发送流程: {local_sock.getpeername()} ==> {local_sock.getsockname()} ==> {remote_sock.getsockname()} ==> {remote_sock.getpeername()}")
+        LsLocal.aaa = (f"数据发送流程: {local_sock.getpeername()} ==> {local_sock.getsockname()} ==> {remote_sock.getsockname()} ==> {remote_sock.getpeername()}")
+        print(LsLocal.aaa)
         # 两个协程工作,加密发送,解密接收
         tasks = (self.encodeCopy(dst=remote_sock, src=local_sock),
                  self.decodeCopy(dst=local_sock, src=remote_sock)
