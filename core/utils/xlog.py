@@ -7,7 +7,7 @@ import logzero
 from logzero import logger
 
 current_path = os.path.dirname(os.path.abspath(__file__))
-log_path = os.path.join(current_path, os.pardir, 'data')
+log_path = os.path.join(current_path, os.pardir, os.pardir, 'data')
 os.makedirs(log_path, exist_ok=True)
 
 

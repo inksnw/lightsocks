@@ -8,10 +8,8 @@ import logging
 import socket
 import asyncio
 
-# from . import cipher 或 import cipher
-# 这里只要 cipher.py 中的 Class "Cipher"
 from .cipher import Cipher
-from utils.xlog import getLogger
+from ..utils.xlog import getLogger
 Connection = socket.socket
 logger = getLogger('local')
 

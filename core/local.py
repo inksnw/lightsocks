@@ -1,13 +1,13 @@
+import sys
 import asyncio
 import socket
-
-
-import sys
-sys.path.append("..")
-from module.cipher import Cipher
-from module.securesocket import SecureSocket
-from utils.xlog import getLogger
+import os
+from .module.cipher import Cipher
+from .module.securesocket import SecureSocket
+from .utils.xlog import getLogger
 logger = getLogger('local')
+from .utils.config import loadjson
+from .utils import net
 
 
 class LsLocal(SecureSocket):
@@ -45,8 +45,7 @@ class LsLocal(SecureSocket):
             local_sock.close()
 
         # logger.debug(f"数据发送流程: {local_sock.getpeername()} ==> {local_sock.getsockname()} ==> {remote_sock.getsockname()} ==> {remote_sock.getpeername()}")
-        LsLocal.aaa = (f"数据发送流程: {local_sock.getpeername()} ==> {local_sock.getsockname()} ==> {remote_sock.getsockname()} ==> {remote_sock.getpeername()}")
-        print(LsLocal.aaa)
+        logger.debug(f"数据发送流程: {local_sock.getpeername()} ==> {local_sock.getsockname()} ==> {remote_sock.getsockname()} ==> {remote_sock.getpeername()}")
         # 两个协程工作,加密发送,解密接收
         tasks = (self.encodeCopy(dst=remote_sock, src=local_sock),
                  self.decodeCopy(dst=local_sock, src=remote_sock)
@@ -65,3 +64,21 @@ class LsLocal(SecureSocket):
             return remoteConn
         except Exception as e:
             raise ConnectionError(f'链接到远程服务器 {self.remoteAddr}失败:{e}')
+
+
+def init():
+    current_path = os.path.dirname(os.path.abspath(__file__))
+    file_config = os.path.join(current_path, os.pardir, 'data', 'config_local.json')
+    with open(file_config, encoding='utf-8') as f:
+        config = loadjson(f)
+
+    loop = asyncio.get_event_loop()
+    listenAddr = net.Address(config.localAddr, config.localPort)
+    remoteAddr = net.Address(config.serverAddr, config.serverPort)
+
+    client = LsLocal(loop=loop, password=config.password, listenAddr=listenAddr, remoteAddr=remoteAddr)
+
+    return client
+
+
+client = init()

@@ -1,8 +1,7 @@
-import json
 import sys
+import json
 from collections import namedtuple
-sys.path.append("..")
-from module.password import InvalidPasswordError, dumpsPassword, loadsPassword
+from ..module.password import loadsPassword
 
 Config = namedtuple('Config', 'serverAddr serverPort localAddr localPort webPort password')
 

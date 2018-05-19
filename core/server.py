@@ -1,14 +1,14 @@
-import logging
+
+import os
+import sys
 import asyncio
 import socket
 
-
-import sys
-sys.path.append("..")
-from module.cipher import Cipher
-from module.securesocket import SecureSocket
-from utils.xlog import getLogger
-from utils import net
+from .module.cipher import Cipher
+from .module.securesocket import SecureSocket
+from .utils.xlog import getLogger
+from .utils import net
+from .utils.config import loadjson
 Connection = socket.socket
 logger = getLogger('server')
 
@@ -221,3 +221,20 @@ class LsServer(SecureSocket):
         )
         task = asyncio.gather(*tasks, loop=self.loop, return_exceptions=True)
         task.add_done_callback(cleanUp)
+
+
+def init():
+    loop = asyncio.get_event_loop()
+    current_path = os.path.dirname(os.path.abspath(__file__))
+    file_config = os.path.join(current_path, os.pardir, 'data', 'config_server.json')
+    with open(file_config, encoding='utf-8') as f:
+        config = loadjson(f)
+
+    listenAddr = net.Address(config.serverAddr, config.serverPort)
+
+    server = LsServer(loop=loop, password=config.password, listenAddr=listenAddr)
+
+    return server
+
+
+server = init()
