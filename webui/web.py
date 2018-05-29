@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import os
-
+import socket
 from sanic import Sanic
-
+from core.utils.config import loadjson
 app = Sanic(__name__)
 from sanic.response import html
 from jinja2 import Environment, FileSystemLoader
@@ -24,7 +24,17 @@ def render_template(template_name: str, **context) -> str:
 async def index(request):
     return render_template('index.html')
 
-webserver = app.create_server(host="0.0.0.0", port=1081)
 
+file_config = os.path.join(base_dir, os.pardir, 'data', 'config_local.json')
+with open(file_config, encoding='utf-8') as f:
+    config = loadjson(f)
+
+listener = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+# listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
+listener.bind(('0.0.0.0', config.webPort))
+listener.listen(6)
+
+webserver = app.create_server(sock=listener)
 if __name__ == '__main__':
-    app.run(port=1081)
+    app.run(sock=listener)
