@@ -7,35 +7,34 @@ import socket
 from .module.cipher import Cipher
 from .module.securesocket import SecureSocket
 from .utils.xlog import getLogger
-from .utils import net
-from .utils.config import loadjson
-Connection = socket.socket
 logger = getLogger('server')
 
 
 class LsServer(SecureSocket):
     # 新建一个服务端
-    def __init__(self, loop, password, listenAddr) -> None:
-        super().__init__(loop=loop, cipher=Cipher.NewCipher(password))
+    def __init__(self, loop, listenAddr) -> None:
+        super().__init__(loop=loop)
         self.listenAddr = listenAddr
 
     # 运行服务端并且监听来自本地代理客户端的请求
     async def listen(self):
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as listener:
-            listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            listener.setblocking(False)
-            listener.bind(self.listenAddr)
-            listener.listen(socket.SOMAXCONN)
+        listener = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        listener.setblocking(False)
+        listener.bind(self.listenAddr)
+        listener.listen(socket.SOMAXCONN)
 
-            logger.info(f'正在监听: {self.listenAddr.ip}: {self.listenAddr.port}')
+        logger.info(f'正在监听: {self.listenAddr}')
 
-            while True:
-                connection, address = await self.loop.sock_accept(listener)
-                asyncio.ensure_future(self.handleConn(connection))
+        while True:
+            connection, address = await self.loop.sock_accept(listener)
+            print('@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@')
+            asyncio.ensure_future(self.handleConn(connection))
+        listener.close()
 
     # 解 SOCKS5 协议
     # https://www.ietf.org/rfc/rfc1928.txt
-    async def handleConn(self, connection: Connection):
+    async def handleConn(self, connection):
         """
         Handle the connection from LsLocal.
         """
@@ -203,10 +202,6 @@ class LsServer(SecureSocket):
         await self.encodeWrite(connection, bytearray((0x05, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00)))
 
         def cleanUp(task):
-            """
-            Close the socket when they succeeded or had an exception.
-            """
-            # 退出本次工作
             dstServer.close()
             connection.close()
 
@@ -215,26 +210,6 @@ class LsServer(SecureSocket):
         logger.debug(f"2. 连接google :   ==> {dstServer.getpeername()} ==> ")
         logger.debug(f"3. 加密返回数据: {dstServer.getsockname()}  ==> {connection.getsockname()} ==> {connection.getpeername()}")
 
-        tasks = (
-            self.decodeCopy(dst=dstServer, src=connection),
-            self.encodeCopy(dst=connection, src=dstServer)
-        )
+        tasks = (self.Copy(dst=dstServer, src=connection), self.Copy(dst=connection, src=dstServer))
         task = asyncio.gather(*tasks, loop=self.loop, return_exceptions=True)
         task.add_done_callback(cleanUp)
-
-
-def init():
-    loop = asyncio.get_event_loop()
-    current_path = os.path.dirname(os.path.abspath(__file__))
-    file_config = os.path.join(current_path, os.pardir, 'data', 'config_server.json')
-    with open(file_config, encoding='utf-8') as f:
-        config = loadjson(f)
-
-    listenAddr = net.Address(config.serverAddr, config.serverPort)
-
-    server = LsServer(loop=loop, password=config.password, listenAddr=listenAddr)
-
-    return server
-
-
-server = init()

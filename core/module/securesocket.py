@@ -15,47 +15,12 @@ logger = getLogger('local')
 
 
 class SecureSocket:
-    """
-    SecureSocket is a socket,
-    that has the ability to decode read and encode write.
-    """
+    def __init__(self, loop):
+        self.loop = loop
 
-    # 加密传输的 TCP Socket
-    def __init__(self, loop: asyncio.AbstractEventLoop, cipher: Cipher) -> None:
-        self.loop = loop or asyncio.get_event_loop()
-        self.cipher = cipher
-
-    # 读取,解密
-    async def decodeRead(self, conn: Connection):
-        data = await self.loop.sock_recv(conn, 1024)
-        decode_data = self.cipher.decode(data)
-        return decode_data
-
-    # 加密,写入
-    async def encodeWrite(self, conn: Connection, bs: bytearray):
-        encode_bs = self.cipher.encode(bs)
-        await self.loop.sock_sendall(conn, encode_bs)
-
-    async def encodeCopy(self, dst: Connection, src: Connection):
-        """
-        It encodes the data flow from the src and sends to dst.
-        """
+    async def Copy(self, dst, src):
         while True:
             data = await self.loop.sock_recv(src, 1024)
             if not data:
                 break
-            await self.encodeWrite(dst, data)
-
-    # 从 src 中源源不断的读取加密后的数据，解密后写入到 dst，直到 src 中没有数据可以再读取
-    async def decodeCopy(self, dst: Connection, src: Connection):
-        """
-        It decodes the data flow from the src and sends to dst.
-        """
-
-        # logger.debug(' %s:%d => %s:%d', *src.getsockname(), *dst.getsockname())
-
-        while True:
-            bs = await self.decodeRead(src)
-            if not bs:
-                break
-            await self.loop.sock_sendall(dst, bs)
+            await self.loop.sock_sendall(dst, data)

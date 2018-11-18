@@ -1,8 +1,6 @@
 {
-  "serverAddr": "192.168.1.9",
+  "serverAddr": "0.0.0.0",
   "serverPort": 443,
-  "localAddr": "0.0.0.0",
-  "localPort": 1082,
-  "webPort":1083,
-  "password": "phmpaAYr8LCQr2s7SNn4bQw9jtjNVEJTkt_y4yA1eJr27wRwZgrcXK1gCRY_87HtPmH9B_UADahHL7aT0lo8G8W_z-oPgsmibDp-i5dDZf7TKlgBOIygN4rp_IfBM1ar684Tn8osQOi3MZR1sp4j8ShRFQvCgMihECauj31jpUUaiOwYHh-zYveWML2EFwja0eElqh2sgyfeQZX7arhPV7QDBYnUmREOvHGBuzR5Un_QtfnH7k6FS9ecuY1pRtX0mHZnkU1fFL7G5-D_ZErDyyQtXl2d4lCkzJt6dFvkxFk5RBLmLiLlcm-jKUzWMrrAVachbkkCfDaG23Pdexx3-g=="
+  "localAddr": "127.0.0.1",
+  "localPort": 1081
 }
