@@ -50,7 +50,8 @@ class LsServer(SecureSocket):
         appear in the METHODS field.
         """
         # 第一个字段 VER 代表 Socks 的版本，Socks5 默认为 0x05，其固定长度为 1 个字节
-        buf = await self.decodeRead(connection)
+        buf = await  self.loop.sock_recv(connection, 1024)
+
         # 只支持 socks 版本 5
         if not buf or buf[0] != 0x05:
             connection.close()
@@ -78,7 +79,7 @@ class LsServer(SecureSocket):
         The client and server then enter a method-specific sub-negotiation.
         """
         # 不需要验证，直接验证通过
-        await self.encodeWrite(connection, bytearray((0x05, 0x00)))
+        await self.loop.sock_sendall(connection, bytearray((0x05, 0x00)))
         """
         The SOCKS request is formed as follows:
             +----+-----+-------+------+----------+----------+
@@ -102,7 +103,8 @@ class LsServer(SecureSocket):
           o  DST.PORT desired destination port in network octet
              order
         """
-        buf = await self.decodeRead(connection)
+        buf = await self.loop.sock_recv(connection, 1024)
+
         # 最短的长度为 7，情况为 ATYP=3，DST.ADDR占用1字节、值为0x0
         if len(buf) < 7:
             connection.close()
@@ -197,7 +199,7 @@ class LsServer(SecureSocket):
                 o  ATYP   address type of following address
         """
         # 响应客户端连接成功
-        await self.encodeWrite(connection, bytearray((0x05, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00)))
+        await self.loop.sock_sendall(connection, bytearray((0x05, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00)))
 
         def cleanUp(task):
             dstServer.close()

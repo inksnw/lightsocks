@@ -17,10 +17,6 @@ class SecureSocket:
     def __init__(self, loop):
         self.loop = loop
 
-    async def decodeRead(self, con):
-        data = await self.loop.sock_recv(con, 1024)
-        return data
-
     async def encodeWrite(self, con, data):
         await self.loop.sock_sendall(con, data)
 
