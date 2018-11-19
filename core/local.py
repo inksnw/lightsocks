@@ -2,7 +2,6 @@ import sys
 import asyncio
 import socket
 import os
-from .module.cipher import Cipher
 from .module.securesocket import SecureSocket
 from .utils.xlog import getLogger
 logger = getLogger('local')

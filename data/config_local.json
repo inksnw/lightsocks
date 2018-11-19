@@ -1,5 +1,5 @@
 {
-  "serverAddr": "0.0.0.0",
+  "serverAddr": "127.0.0.1",
   "serverPort": 443,
   "localAddr": "127.0.0.1",
   "localPort": 1081

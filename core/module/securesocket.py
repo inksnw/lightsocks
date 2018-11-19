@@ -8,7 +8,6 @@ import logging
 import socket
 import asyncio
 
-from .cipher import Cipher
 from ..utils.xlog import getLogger
 Connection = socket.socket
 logger = getLogger('local')
@@ -17,6 +16,13 @@ logger = getLogger('local')
 class SecureSocket:
     def __init__(self, loop):
         self.loop = loop
+
+    async def decodeRead(self, con):
+        data = await self.loop.sock_recv(con, 1024)
+        return data
+
+    async def encodeWrite(self, con, data):
+        await self.loop.sock_sendall(con, data)
 
     async def Copy(self, dst, src):
         while True:

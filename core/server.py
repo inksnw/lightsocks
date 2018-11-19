@@ -4,7 +4,6 @@ import sys
 import asyncio
 import socket
 
-from .module.cipher import Cipher
 from .module.securesocket import SecureSocket
 from .utils.xlog import getLogger
 logger = getLogger('server')
@@ -28,7 +27,6 @@ class LsServer(SecureSocket):
 
         while True:
             connection, address = await self.loop.sock_accept(listener)
-            print('@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@')
             asyncio.ensure_future(self.handleConn(connection))
         listener.close()
 
@@ -130,7 +128,7 @@ class LsServer(SecureSocket):
             # domain: X'03'
             # 发起查询域名
             dstIP = buf[5:-2].decode()
-            dstAddress = net.Address(ip=dstIP, port=dstPort)
+            dstAddress = (dstIP, dstPort)
         elif buf[3] == 0x04:
             # ipv6 address: X'04'
             dstIP = socket.inet_ntop(socket.AF_INET6, buf[4:4 + 16])
